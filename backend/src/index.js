@@ -13,14 +13,15 @@ import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT||5000;
 const __dirname = path.resolve();
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://chat-app-pqax.onrender.com".replace("/api","") && 
+            "https://teal-monstera-3c4396.netlify.app/",
     credentials: true,
   })
 );
