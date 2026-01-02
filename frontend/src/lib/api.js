@@ -1,12 +1,9 @@
-// lib/api.js
 import axios from "axios";
+const api = axios.create({
+  baseURL: "https://chat-app-pqax.onrender.com/api",
+  withCredentials: true,
+});
 
-const API = "https://chat-app-pqax.onrender.com";
+export default api;
 
-export const getStreamToken = async () => {
-  const res = await axios.get(`${API}/api/video/token`, {
-    withCredentials: true,
-  });
-  return res.data;
-};
 

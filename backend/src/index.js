@@ -20,8 +20,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://chat-app-pqax.onrender.com".replace("/api","") && 
-            "https://teal-monstera-3c4396.netlify.app/",
+    origin: [
+      "http://localhost:5173",
+      "https://teal-monstera-3c4396.netlify.app"
+    ],
     credentials: true,
   })
 );
