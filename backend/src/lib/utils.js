@@ -7,10 +7,9 @@ export const generateToken = (userId, res) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: true,          // REQUIRED for HTTPS (Netlify)
-    sameSite: "none",      // REQUIRED for cross-origin
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: true, // IMPORTANT
+    sameSite: "None", // REQUIRED for cross-site
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
-
   return token;
 };
