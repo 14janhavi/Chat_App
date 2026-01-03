@@ -1,23 +1,30 @@
 import { create } from "zustand";
-import { axiosInstance } from "../lib/axios.js";
+import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL =
+/**
+ * SOCKET SERVER URL
+ * - Local: http://localhost:5001
+ * - Production: Render backend
+ */
+const SOCKET_URL =
   import.meta.env.MODE === "development"
     ? "http://localhost:5001"
     : "https://chat-app-pqax.onrender.com";
 
 export const useAuthStore = create((set, get) => ({
+  // ================= STATE =================
   authUser: null,
   isSigningUp: false,
   isLoggingIn: false,
   isUpdatingProfile: false,
   isCheckingAuth: true,
-  onlineUsers: [],
   socket: null,
+  onlineUsers: [],
 
   // ================= CHECK AUTH =================
+  // Uses COOKIE (jwt) sent automatically
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
@@ -35,8 +42,11 @@ export const useAuthStore = create((set, get) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post("/auth/signup", data);
+
+      // Cookie is set by backend
       set({ authUser: res.data });
       toast.success("Account created successfully");
+
       get().connectSocket();
     } catch (error) {
       toast.error(error.response?.data?.message || "Signup failed");
@@ -50,8 +60,11 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
+
+      // Cookie is set by backend
       set({ authUser: res.data });
       toast.success("Logged in successfully");
+
       get().connectSocket();
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
@@ -91,13 +104,21 @@ export const useAuthStore = create((set, get) => ({
     const { authUser, socket } = get();
     if (!authUser || socket?.connected) return;
 
-    const newSocket = io(BASE_URL, {
+    const newSocket = io(SOCKET_URL, {
+      withCredentials: true,
       query: { userId: authUser._id },
-      withCredentials: true, // 🔥 REQUIRED
+    });
+
+    newSocket.on("connect", () => {
+      console.log("Socket connected:", newSocket.id);
     });
 
     newSocket.on("getOnlineUsers", (users) => {
       set({ onlineUsers: users });
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("Socket disconnected");
     });
 
     set({ socket: newSocket });
