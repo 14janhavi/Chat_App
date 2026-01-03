@@ -92,9 +92,15 @@ export const login = async (req, res) => {
 };
 
 // ================= LOGOUT =================
-export const logout = async (req, res) => {
-  // frontend will just remove token from localStorage
-  return res.status(200).json({ message: "Logged out successfully" });
+export const logout = (req, res) => {
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 0,
+  });
+
+  res.status(200).json({ message: "Logged out" });
 };
 
 // ================= UPDATE PROFILE =================
