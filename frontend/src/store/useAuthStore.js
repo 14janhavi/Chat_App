@@ -10,74 +10,60 @@ const SOCKET_URL =
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
-  isCheckingAuth: true,
   socket: null,
   onlineUsers: [],
 
-  // check if logged in
-  checkAuth: async () => {
-  try {
-    const res = await axiosInstance.get("/auth/check");
-    set({ authUser: res.data });
-    get().connectSocket();
-  } catch (error) {
-    // 🚨 IMPORTANT: clear auth state on 401
-    set({ authUser: null });
-    get().disconnectSocket();
-  } finally {
-    set({ isCheckingAuth: false });
-  }
-},
-
-
+  // ================= LOGIN =================
   login: async (data) => {
     try {
       const res = await axiosInstance.post("/auth/login", data);
-      set({ authUser: res.data });
+
+      // store token
+      localStorage.setItem("token", res.data.token);
+
+      set({ authUser: res.data.user });
       toast.success("Logged in successfully");
+
       get().connectSocket();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Login failed");
     }
   },
 
+  // ================= SIGNUP =================
   signup: async (data) => {
     try {
       const res = await axiosInstance.post("/auth/signup", data);
-      set({ authUser: res.data });
-      toast.success("Account created successfully");
+
+      localStorage.setItem("token", res.data.token);
+
+      set({ authUser: res.data.user });
+      toast.success("Account created");
+
       get().connectSocket();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Signup failed");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Signup failed");
     }
   },
 
-  checkAuth: async () => {
-  try {
-    const res = await axiosInstance.get("/auth/check");
-    set({ authUser: res.data });
-    get().connectSocket();
-  } catch (error) {
-    // 🚨 IMPORTANT: clear auth state on 401
-    set({ authUser: null });
+  // ================= LOGOUT =================
+  logout: () => {
+    localStorage.removeItem("token");
     get().disconnectSocket();
-  } finally {
-    set({ isCheckingAuth: false });
-  }
-},
+    set({ authUser: null, onlineUsers: [] });
+  },
 
-
+  // ================= SOCKET =================
   connectSocket: () => {
     const { authUser, socket } = get();
-    if (!authUser || socket?.connected) return;
+    if (!authUser || socket) return;
 
     const newSocket = io(SOCKET_URL, {
-      withCredentials: true,
       query: { userId: authUser._id },
     });
 
     newSocket.on("getOnlineUsers", (users) => {
-      set({ onlineUsers: Array.isArray(users) ? users : [] });
+      set({ onlineUsers: users });
     });
 
     set({ socket: newSocket });
@@ -86,7 +72,7 @@ export const useAuthStore = create((set, get) => ({
   disconnectSocket: () => {
     const socket = get().socket;
     if (socket) socket.disconnect();
-    set({ socket: null, onlineUsers: [] });
+    set({ socket: null });
   },
 }));
 
