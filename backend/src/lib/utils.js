@@ -5,11 +5,11 @@ export const generateToken = (userId, res) => {
     expiresIn: "7d",
   });
 
- res.cookie("jwt", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
-
+  res.cookie("jwt", token, {
+    httpOnly: true,
+    secure: true,          // REQUIRED for Netlify + Render
+    sameSite: "none",      // REQUIRED for cross-site
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 };
+
