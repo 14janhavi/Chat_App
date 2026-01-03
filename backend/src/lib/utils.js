@@ -9,11 +9,8 @@ export const generateToken = (userId, res) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: true,      // ✅ REQUIRED for Render + Netlify
-    sameSite: "none",  // ✅ REQUIRED for cross-site cookies
+    secure: true,        // REQUIRED on Render
+    sameSite: "none",    // REQUIRED for Netlify
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
-
-
-
