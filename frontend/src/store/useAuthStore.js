@@ -8,20 +8,18 @@ const SOCKET_URL =
     ? "http://localhost:5001"
     : "https://chat-app-pqax.onrender.com";
 
-const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set, get) => ({
   authUser: null,
   isCheckingAuth: true,
   socket: null,
   onlineUsers: [],
 
-  // 🔐 CHECK AUTH
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
-      set({ authUser: res.data });
+      set({ authUser: res.data.user });
       get().connectSocket();
     } catch {
-      localStorage.removeItem("token");
       set({ authUser: null });
       get().disconnectSocket();
     } finally {
@@ -29,46 +27,40 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // 🔐 LOGIN
-  login: async (data) => {
-    try {
-      const res = await axiosInstance.post("/auth/login", data);
-      localStorage.setItem("token", res.data.token);
-      set({ authUser: res.data.user });
-      toast.success("Logged in");
-      get().connectSocket();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
-    }
-  },
-
-  // 🔐 SIGNUP
   signup: async (data) => {
     try {
       const res = await axiosInstance.post("/auth/signup", data);
-      localStorage.setItem("token", res.data.token);
       set({ authUser: res.data.user });
-      toast.success("Account created");
+      toast.success("Account created successfully");
       get().connectSocket();
     } catch (err) {
       toast.error(err.response?.data?.message || "Signup failed");
     }
   },
 
-  // 🔐 LOGOUT
-  logout: () => {
-    localStorage.removeItem("token");
-    set({ authUser: null });
-    get().disconnectSocket();
-    toast.success("Logged out");
+  login: async (data) => {
+    try {
+      const res = await axiosInstance.post("/auth/login", data);
+      set({ authUser: res.data.user });
+      toast.success("Logged in successfully");
+      get().connectSocket();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Login failed");
+    }
   },
 
-  // 🔌 SOCKET
+  logout: async () => {
+    await axiosInstance.post("/auth/logout");
+    set({ authUser: null });
+    get().disconnectSocket();
+  },
+
   connectSocket: () => {
     const { authUser, socket } = get();
     if (!authUser || socket?.connected) return;
 
     const newSocket = io(SOCKET_URL, {
+      withCredentials: true,
       query: { userId: authUser._id },
     });
 
@@ -80,10 +72,7 @@ const useAuthStore = create((set, get) => ({
   },
 
   disconnectSocket: () => {
-    const socket = get().socket;
-    if (socket) socket.disconnect();
+    get().socket?.disconnect();
     set({ socket: null, onlineUsers: [] });
   },
 }));
-
-export default useAuthStore;

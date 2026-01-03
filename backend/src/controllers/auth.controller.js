@@ -1,130 +1,121 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import cloudinary from "../lib/cloudinary.js";
-import { generateToken } from "../lib/utils.js";
+
+// create JWT
+const createToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
+};
 
 // ================= SIGNUP =================
 export const signup = async (req, res) => {
-  try {
-    const { fullName, email, password } = req.body;
+  const { fullName, email, password } = req.body;
 
-    if (!fullName || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 6 characters" });
-    }
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await User.create({
-      fullName,
-      email,
-      password: hashedPassword,
-    });
-
-    // ✅ SET COOKIE
-    generateToken(newUser._id, res);
-
-    return res.status(201).json({
-      _id: newUser._id,
-      fullName: newUser.fullName,
-      email: newUser.email,
-      profilePic: newUser.profilePic,
-    });
-  } catch (error) {
-    console.error("Signup Error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+  if (!fullName || !email || !password) {
+    return res.status(400).json({ message: "All fields are required" });
   }
-};
 
-// ================= LOGIN =================
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  if (password.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 characters" });
+  }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    return res.status(400).json({ message: "Email already exists" });
+  }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ SET COOKIE
-    generateToken(user._id, res);
+  const user = await User.create({
+    fullName,
+    email,
+    password: hashedPassword,
+  });
 
-    return res.status(200).json({
+  const token = createToken(user._id);
+
+  // ✅ SET COOKIE
+  res.cookie("jwt", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  // ✅ ALWAYS RETURN { user }
+  res.status(201).json({
+    user: {
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
-    });
-  } catch (error) {
-    console.error("Login Error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
+    },
+  });
+};
+
+// ================= LOGIN =================
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+  const token = createToken(user._id);
+
+  res.cookie("jwt", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  // ✅ SAME RESPONSE SHAPE
+  res.status(200).json({
+    user: {
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      profilePic: user.profilePic,
+    },
+  });
 };
 
 // ================= LOGOUT =================
 export const logout = (req, res) => {
-  try {
-    // ✅ COOKIE MUST MATCH LOGIN COOKIE OPTIONS
-    res.cookie("jwt", "", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 0,
-    });
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 0,
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+};
 
-    return res.status(200).json({ message: "Logged out successfully" });
-  } catch (error) {
-    console.error("Logout Error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
+// ================= CHECK AUTH =================
+export const checkAuth = (req, res) => {
+  res.status(200).json({
+    user: req.user,
+  });
 };
 
 // ================= UPDATE PROFILE =================
 export const updateProfile = async (req, res) => {
-  try {
-    const { profilePic } = req.body;
-    const userId = req.user._id;
+  const { profilePic } = req.body;
+  const userId = req.user._id;
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile pic is required" });
-    }
+  const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { profilePic: uploadResponse.secure_url },
+    { new: true }
+  ).select("-password");
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
-      { new: true }
-    ).select("-password");
-
-    return res.status(200).json(updatedUser);
-  } catch (error) {
-    console.error("Update profile error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-// ================= CHECK AUTH =================
-export const checkAuth = async (req, res) => {
-  try {
-    return res.status(200).json(req.user);
-  } catch (error) {
-    console.error("CheckAuth Error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
+  res.status(200).json({ user: updatedUser });
 };
