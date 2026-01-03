@@ -11,16 +11,20 @@ export const useChatStore = create((set, get) => ({
   isMessagesLoading: false,
 
   getUsers: async () => {
-    set({ isUsersLoading: true });
-    try {
-      const res = await axiosInstance.get("/messages/users");
-      set({ users: res.data });
-    } catch (error) {
-      toast.error(error.response.data.message);
-    } finally {
-      set({ isUsersLoading: false });
-    }
-  },
+  set({ isUsersLoading: true });
+  try {
+    const res = await axiosInstance.get("/messages/users");
+
+    // ✅ FORCE ARRAY
+    set({ users: Array.isArray(res.data) ? res.data : [] });
+  } catch (error) {
+    set({ users: [] });
+    toast.error(error.response?.data?.message || "Failed to load users");
+  } finally {
+    set({ isUsersLoading: false });
+  }
+},
+
 
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
