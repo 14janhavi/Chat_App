@@ -1,14 +1,13 @@
 import axios from "axios";
 
-export const axiosInstance = axios.create({
+const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true,
+  withCredentials: true, // REQUIRED
 });
 
-// ✅ ADD THIS FUNCTION
 export const getStreamToken = async () => {
-  const res = await axiosInstance.get("/video/token");
+  const res = await API.get("/video/token");
   return res.data;
 };
 
-
+export default API;

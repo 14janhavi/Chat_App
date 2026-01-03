@@ -7,9 +7,8 @@ export const generateToken = (userId, res) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: true, // IMPORTANT
-    sameSite: "None", // REQUIRED for cross-site
+    secure: true,          // REQUIRED for Netlify + Render
+    sameSite: "none",      // REQUIRED for cross-origin
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
-  return token;
 };
