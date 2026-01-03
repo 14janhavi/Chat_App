@@ -92,16 +92,16 @@ export const login = async (req, res) => {
 };
 
 // ================= LOGOUT =================
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
   res.cookie("jwt", "", {
     httpOnly: true,
     secure: true,
     sameSite: "none",
-    maxAge: 0,
+    expires: new Date(0), // ✅ force delete
   });
-  return res.status(200).json({ message: "Logged out successfully" });
-};
 
+  res.status(200).json({ message: "Logged out successfully" });
+};
 
 // ================= UPDATE PROFILE =================
 export const updateProfile = async (req, res) => {

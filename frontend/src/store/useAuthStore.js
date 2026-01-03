@@ -16,16 +16,19 @@ export const useAuthStore = create((set, get) => ({
 
   // check if logged in
   checkAuth: async () => {
-    try {
-      const res = await axiosInstance.get("/auth/check");
-      set({ authUser: res.data });
-      get().connectSocket();
-    } catch {
-      set({ authUser: null });
-    } finally {
-      set({ isCheckingAuth: false });
-    }
-  },
+  try {
+    const res = await axiosInstance.get("/auth/check");
+    set({ authUser: res.data });
+    get().connectSocket();
+  } catch (error) {
+    // 🚨 IMPORTANT: clear auth state on 401
+    set({ authUser: null });
+    get().disconnectSocket();
+  } finally {
+    set({ isCheckingAuth: false });
+  }
+},
+
 
   login: async (data) => {
     try {
@@ -49,16 +52,20 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  logout: async () => {
-    try {
-      await axiosInstance.post("/auth/logout");
-      get().disconnectSocket();
-      set({ authUser: null, onlineUsers: [] });
-      toast.success("Logged out successfully");
-    } catch {
-      toast.error("Logout failed");
-    }
-  },
+  checkAuth: async () => {
+  try {
+    const res = await axiosInstance.get("/auth/check");
+    set({ authUser: res.data });
+    get().connectSocket();
+  } catch (error) {
+    // 🚨 IMPORTANT: clear auth state on 401
+    set({ authUser: null });
+    get().disconnectSocket();
+  } finally {
+    set({ isCheckingAuth: false });
+  }
+},
+
 
   connectSocket: () => {
     const { authUser, socket } = get();
