@@ -99,9 +99,9 @@ export const logout = (req, res) => {
     sameSite: "none",
     maxAge: 0,
   });
-
-  res.status(200).json({ message: "Logged out" });
+  return res.status(200).json({ message: "Logged out successfully" });
 };
+
 
 // ================= UPDATE PROFILE =================
 export const updateProfile = async (req, res) => {
