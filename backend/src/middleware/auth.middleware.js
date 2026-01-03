@@ -1,71 +1,25 @@
+import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
-import bcrypt from "bcryptjs";
-import { generateToken } from "../lib/utils.js";
 
-export const signup = async (req, res) => {
-  const { fullName, email, password } = req.body;
+export const protectRoute = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
 
-  if (!fullName || !email || !password) {
-    return res.status(400).json({ message: "All fields required" });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.userId).select("-password");
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
   }
-
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    return res.status(400).json({ message: "User already exists" });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await User.create({
-    fullName,
-    email,
-    password: hashedPassword,
-  });
-
-  generateToken(user._id, res);
-
-  res.status(201).json({
-    _id: user._id,
-    fullName: user.fullName,
-    email: user.email,
-    profilePic: user.profilePic,
-  });
-};
-
-export const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(400).json({ message: "Invalid credentials" });
-  }
-
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(400).json({ message: "Invalid credentials" });
-  }
-
-  generateToken(user._id, res);
-
-  res.json({
-    _id: user._id,
-    fullName: user.fullName,
-    email: user.email,
-    profilePic: user.profilePic,
-  });
-};
-
-export const logout = (req, res) => {
-  res.cookie("jwt", "", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 0,
-  });
-
-  res.json({ message: "Logged out successfully" });
-};
-
-export const checkAuth = async (req, res) => {
-  res.status(200).json(req.user);
 };

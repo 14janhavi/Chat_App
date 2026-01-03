@@ -8,55 +8,65 @@ const SOCKET_URL =
     ? "http://localhost:5001"
     : "https://chat-app-pqax.onrender.com";
 
-export const useAuthStore = create((set, get) => ({
+const useAuthStore = create((set, get) => ({
   authUser: null,
+  isCheckingAuth: true,
   socket: null,
   onlineUsers: [],
 
-  // ================= LOGIN =================
+  // 🔐 CHECK AUTH
+  checkAuth: async () => {
+    try {
+      const res = await axiosInstance.get("/auth/check");
+      set({ authUser: res.data });
+      get().connectSocket();
+    } catch {
+      localStorage.removeItem("token");
+      set({ authUser: null });
+      get().disconnectSocket();
+    } finally {
+      set({ isCheckingAuth: false });
+    }
+  },
+
+  // 🔐 LOGIN
   login: async (data) => {
     try {
       const res = await axiosInstance.post("/auth/login", data);
-
-      // store token
       localStorage.setItem("token", res.data.token);
-
       set({ authUser: res.data.user });
-      toast.success("Logged in successfully");
-
+      toast.success("Logged in");
       get().connectSocket();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Login failed");
     }
   },
 
-  // ================= SIGNUP =================
+  // 🔐 SIGNUP
   signup: async (data) => {
     try {
       const res = await axiosInstance.post("/auth/signup", data);
-
       localStorage.setItem("token", res.data.token);
-
       set({ authUser: res.data.user });
       toast.success("Account created");
-
       get().connectSocket();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Signup failed");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Signup failed");
     }
   },
 
-  // ================= LOGOUT =================
+  // 🔐 LOGOUT
   logout: () => {
     localStorage.removeItem("token");
+    set({ authUser: null });
     get().disconnectSocket();
-    set({ authUser: null, onlineUsers: [] });
+    toast.success("Logged out");
   },
 
-  // ================= SOCKET =================
+  // 🔌 SOCKET
   connectSocket: () => {
     const { authUser, socket } = get();
-    if (!authUser || socket) return;
+    if (!authUser || socket?.connected) return;
 
     const newSocket = io(SOCKET_URL, {
       query: { userId: authUser._id },
@@ -72,7 +82,7 @@ export const useAuthStore = create((set, get) => ({
   disconnectSocket: () => {
     const socket = get().socket;
     if (socket) socket.disconnect();
-    set({ socket: null });
+    set({ socket: null, onlineUsers: [] });
   },
 }));
 
