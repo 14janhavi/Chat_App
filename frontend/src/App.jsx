@@ -11,18 +11,15 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
 import { Toaster } from "react-hot-toast";
-import { useEffect } from "react";
-import { Loader } from "lucide-react";
 
 const App = () => {
-  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  const { authUser } = useAuthStore();
   const { theme } = useThemeStore();
 
-  // 🔑 THIS IS REQUIRED
   useEffect(() => {
     checkAuth();
-  }, []); // ⚠️ EMPTY dependency array
-
+  }, []); 
+  
   // 🔒 Block UI until auth check completes
   if (isCheckingAuth) {
     return (
@@ -31,7 +28,6 @@ const App = () => {
       </div>
     );
   }
-
   return (
     <div data-theme={theme}>
       {authUser && <Navbar />}
