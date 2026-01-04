@@ -6,21 +6,24 @@ import LoginPage from "./pages/LoginPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import CallPage from "./pages/CallPage";
-import { useEffect } from "react";
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
+import { useEffect } from "react";
+import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
 const App = () => {
-  const { authUser } = useAuthStore();
+  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
   const { theme } = useThemeStore();
 
+  // ✅ VERY IMPORTANT
   useEffect(() => {
     checkAuth();
-  }, []); 
-  
-  // 🔒 Block UI until auth check completes
+  }, [checkAuth]);
+
+  // ✅ block UI until auth check finishes
   if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -28,6 +31,7 @@ const App = () => {
       </div>
     );
   }
+
   return (
     <div data-theme={theme}>
       {authUser && <Navbar />}
