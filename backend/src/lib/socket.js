@@ -1,10 +1,11 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 
-const userSocketMap = {};
+let io; // 👈 global io instance
+const userSocketMap = {}; // userId -> socketId
 
 export const setupSocket = (server) => {
-  const io = new Server(server, {
+  io = new Server(server, {
     cors: {
       origin: [
         "http://localhost:5173",
@@ -40,4 +41,12 @@ export const setupSocket = (server) => {
   });
 
   return io;
+};
+
+// ✅ EXPORT io instance
+export { io };
+
+// ✅ EXPORT helper used by message controller
+export const getReceiverSocketId = (receiverId) => {
+  return userSocketMap[receiverId];
 };

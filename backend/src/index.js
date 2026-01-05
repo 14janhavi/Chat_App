@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 import path from "path";
-
+import { setupSocket } from "./lib/socket.js";
 import { connectDB } from "./lib/db.js";
 
 import authRoutes from "./routes/auth.route.js";
@@ -13,7 +13,7 @@ import { app, server } from "./lib/socket.js";
 import videoRoutes from "./routes/video.route.js";
 
 dotenv.config();
-
+setupSocket(server);
 const PORT = process.env.PORT||5000;
 const __dirname = path.resolve();
 
