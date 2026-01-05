@@ -15,12 +15,25 @@ import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
 
 const App = () => {
-  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  const {
+    authUser,
+    checkAuth,
+    isCheckingAuth,
+    connectSocket,
+  } = useAuthStore();
+
   const { theme } = useThemeStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // 🔴 reconnect socket after refresh
+  useEffect(() => {
+    if (authUser) {
+      connectSocket();
+    }
+  }, [authUser, connectSocket]);
 
   if (isCheckingAuth) {
     return (

@@ -14,7 +14,7 @@ export const useAuthStore = create((set, get) => ({
   socket: null,
   onlineUsers: [],
 
-  // ✅ ONLY API AUTH CHECK (NO SOCKET)
+  // ================= AUTH CHECK =================
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
@@ -26,43 +26,56 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // ================= SIGNUP =================
   signup: async (data) => {
     try {
       const res = await axiosInstance.post("/auth/signup", data);
-      set({ authUser: res.data });
+
+      // 🔴 SAVE TOKEN
+      localStorage.setItem("token", res.data.token);
+
+      set({ authUser: res.data.user });
       toast.success("Account created");
+
       get().connectSocket();
     } catch (err) {
-      toast.error("Signup failed");
+      toast.error(err.response?.data?.message || "Signup failed");
     }
   },
 
+  // ================= LOGIN =================
   login: async (data) => {
     try {
       const res = await axiosInstance.post("/auth/login", data);
-      set({ authUser: res.data });
+
+      // 🔴 SAVE TOKEN
+      localStorage.setItem("token", res.data.token);
+
+      set({ authUser: res.data.user });
       toast.success("Logged in");
+
       get().connectSocket();
     } catch {
       toast.error("Login failed");
     }
   },
 
+  // ================= LOGOUT =================
   logout: async () => {
-    await axiosInstance.post("/auth/logout");
+    localStorage.removeItem("token");
     get().disconnectSocket();
     set({ authUser: null, onlineUsers: [] });
   },
 
-  // ✅ JWT SOCKET AUTH
+  // ================= SOCKET =================
   connectSocket: () => {
-    const { authUser, socket } = get();
-    if (!authUser || socket?.connected) return;
+    const token = localStorage.getItem("token");
+    const { socket } = get();
+
+    if (!token || socket?.connected) return;
 
     const newSocket = io(SOCKET_URL, {
-      auth: {
-        token: authUser.token, // 🔴 REQUIRED
-      },
+      auth: { token }, // ✅ CORRECT
     });
 
     newSocket.on("getOnlineUsers", (users) => {

@@ -53,6 +53,7 @@ export const signup = async (req, res) => {
       email: user.email,
       profilePic: user.profilePic,
     },
+    token,
   });
 };
 
@@ -83,6 +84,7 @@ export const login = async (req, res) => {
       email: user.email,
       profilePic: user.profilePic,
     },
+    token,
   });
 };
 
