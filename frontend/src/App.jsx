@@ -1,3 +1,8 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Loader } from "lucide-react";
+import { Toaster } from "react-hot-toast";
+
 import Navbar from "./components/Navbar";
 
 import HomePage from "./pages/HomePage";
@@ -7,23 +12,37 @@ import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import CallPage from "./pages/CallPage";
 
-import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
-import { useEffect } from "react";
-import { Loader } from "lucide-react";
-import { Toaster } from "react-hot-toast";
 
 const App = () => {
-  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  const {
+    authUser,
+    checkAuth,
+    isCheckingAuth,
+    connectSocket,
+    disconnectSocket,
+  } = useAuthStore();
+
   const { theme } = useThemeStore();
 
-  // ✅ VERY IMPORTANT
+  // 1️⃣ Check authentication ONCE on app load
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  // ✅ block UI until auth check finishes
+  // 2️⃣ Connect socket AFTER authUser is available
+  useEffect(() => {
+    if (authUser) {
+      connectSocket();
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [authUser, connectSocket, disconnectSocket]);
+
+  // 3️⃣ Block UI until auth check finishes
   if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -37,7 +56,7 @@ const App = () => {
       {authUser && <Navbar />}
 
       <Routes>
-        {/* PUBLIC */}
+        {/* ===== PUBLIC ROUTES ===== */}
         <Route
           path="/login"
           element={!authUser ? <LoginPage /> : <Navigate to="/" />}
@@ -47,7 +66,7 @@ const App = () => {
           element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
         />
 
-        {/* PROTECTED */}
+        {/* ===== PROTECTED ROUTES ===== */}
         <Route
           path="/"
           element={authUser ? <HomePage /> : <Navigate to="/login" />}
@@ -66,7 +85,7 @@ const App = () => {
         />
       </Routes>
 
-      <Toaster />
+      <Toaster position="top-right" />
     </div>
   );
 };

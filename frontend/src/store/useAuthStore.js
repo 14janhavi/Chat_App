@@ -16,16 +16,17 @@ export const useAuthStore = create((set, get) => ({
 
   // ✅ ONLY CHECK AUTH (NO SOCKET HERE)
   checkAuth: async () => {
-    try {
-      const res = await axiosInstance.get("/auth/check");
-      set({ authUser: res.data }); // ✅ backend sends user directly
-    } catch {
-      set({ authUser: null });
-      get().disconnectSocket();
-    } finally {
-      set({ isCheckingAuth: false });
-    }
-  },
+  try {
+    const res = await axiosInstance.get("/auth/check");
+    set({ authUser: res.data.user });
+  } catch {
+    set({ authUser: null });
+    get().disconnectSocket();
+  } finally {
+    set({ isCheckingAuth: false });
+  }
+},
+
 
   signup: async (data) => {
     try {
@@ -56,20 +57,23 @@ export const useAuthStore = create((set, get) => ({
   },
 
   connectSocket: () => {
-    const { authUser, socket } = get();
-    if (!authUser || socket?.connected) return;
+  const { authUser, socket } = get();
+  if (!authUser || socket?.connected) return;
 
-    const newSocket = io(SOCKET_URL, {
-      withCredentials: true,
-      query: { userId: authUser._id },
-    });
+  const newSocket = io(SOCKET_URL, {
+    auth: {
+      token: authUser.token, // 🔴 IMPORTANT
+    },
+  });
 
-    newSocket.on("getOnlineUsers", (users) => {
-      set({ onlineUsers: users });
-    });
+  newSocket.on("getOnlineUsers", (users) => {
+    set({ onlineUsers: users });
+  });
 
-    set({ socket: newSocket });
-  },
+  set({ socket: newSocket });
+},
+
+
 
   disconnectSocket: () => {
     const socket = get().socket;
