@@ -1,3 +1,4 @@
+import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 
 const userSocketMap = {};
@@ -22,7 +23,7 @@ export const setupSocket = (server) => {
       socket.userId = decoded.userId;
 
       next();
-    } catch (err) {
+    } catch {
       next(new Error("Unauthorized"));
     }
   });
