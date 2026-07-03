@@ -30,16 +30,25 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://teal-monstera-3c4396.netlify.app",
-    ],
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "https://teal-monstera-3c4396.netlify.app",
+      ];
+
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".netlify.app")
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 // ================= ROUTES =================
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
