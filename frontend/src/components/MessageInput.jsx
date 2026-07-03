@@ -2,13 +2,14 @@ import { useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { Image, Send, X } from "lucide-react";
 import toast from "react-hot-toast";
-
+import EmojiPicker from "emoji-picker-react";
+import { Smile } from "lucide-react";
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const { sendMessage } = useChatStore();
-
+const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file.type.startsWith("image/")) {
@@ -22,6 +23,11 @@ const MessageInput = () => {
     };
     reader.readAsDataURL(file);
   };
+
+  const onEmojiClick = (emojiData) => {
+  setText((prev) => prev + emojiData.emoji);
+  setShowEmojiPicker(false);
+};
 
   const removeImage = () => {
     setImagePreview(null);
@@ -102,6 +108,21 @@ const MessageInput = () => {
         >
           <Send size={22} />
         </button>
+        <div className="relative">
+  <button
+    type="button"
+    className="btn btn-circle btn-sm"
+    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+  >
+    <Smile size={20} />
+  </button>
+
+  {showEmojiPicker && (
+    <div className="absolute bottom-12 left-0 z-50">
+      <EmojiPicker onEmojiClick={onEmojiClick} />
+    </div>
+  )}
+</div>
       </form>
     </div>
   );

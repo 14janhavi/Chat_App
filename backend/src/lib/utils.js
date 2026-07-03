@@ -7,8 +7,10 @@ export const generateToken = (userId, res) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: true,        // ✅ required on Netlify
-    sameSite: "none",    // ✅ required for cross-domain
+    secure: process.env.NODE_ENV === "production", // Only true in production
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+
+  return token;
 };
