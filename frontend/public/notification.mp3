@@ -1,0 +1,5 @@
+const audio = new Audio("/notification.mp3");
+
+socket.on("notification", () => {
+    audio.play();
+});

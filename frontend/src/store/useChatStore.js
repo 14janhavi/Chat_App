@@ -54,9 +54,23 @@ export const useChatStore = create((set, get) => ({
   if (!selectedUser || !socket) return;
 
   socket.on("newMessage", (newMessage) => {
-    if (newMessage.senderId !== selectedUser._id) return;
-    set({ messages: [...get().messages, newMessage] });
+
+  // Show browser notification
+  if (
+    Notification.permission === "granted" &&
+    document.hidden
+  ) {
+    new Notification("New Message", {
+      body: newMessage.text || "📷 Sent an image",
+      icon: "/avatar.png",
+    });
+  }
+
+  set({
+    messages: [...get().messages, newMessage],
   });
+
+});
 },
 
 unsubscribeFromMessages: () => {

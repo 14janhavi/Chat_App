@@ -49,22 +49,55 @@ export const sendMessage = async (req, res) => {
     }
 
     const newMessage = new Message({
-      senderId,
-      receiverId,
-      text,
-      image: imageUrl,
-    });
+  senderId,
+  receiverId,
+  text,
+  image: imageUrl,
+  isRead: false,
+});
 
     await newMessage.save();
 
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
-    }
+  io.to(receiverSocketId).emit("newMessage", newMessage);
+
+  io.to(receiverSocketId).emit("notification", {
+    senderId,
+    receiverId,
+    text,
+    createdAt: newMessage.createdAt,
+  });
+}
 
     res.status(201).json(newMessage);
   } catch (error) {
     console.log("Error in sendMessage controller: ", error.message);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Message.updateMany(
+      {
+        senderId: id,
+        receiverId: req.user._id,
+        isRead: false,
+      },
+      {
+        isRead: true,
+      }
+    );
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: "Internal Server Error",
+    });
   }
 };

@@ -33,6 +33,10 @@ const ChatContainer = () => {
     }
   }, [messages]);
 
+  useEffect(() => {
+  Notification.requestPermission();
+}, []);
+
   if (isMessagesLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-auto">

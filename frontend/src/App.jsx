@@ -35,6 +35,11 @@ const App = () => {
     }
   }, [authUser, connectSocket]);
 
+  useEffect(() => {
+  if ("Notification" in window) {
+    Notification.requestPermission();
+  }
+}, []);
   if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center h-screen">
