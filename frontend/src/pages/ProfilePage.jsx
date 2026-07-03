@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User, Lock } from "lucide-react";
-import { axiosInstance } from "../lib/axios";
-import toast from "react-hot-toast";
+
 
 const ProfilePage = () => {
   const { authUser, isUpdatingProfile, updateProfile, checkAuth } =
@@ -40,27 +39,22 @@ const ProfilePage = () => {
 
     reader.readAsDataURL(file);
   };
+const handleSave = async () => {
+  const updatedUser = await updateProfile({
+    fullName,
+    currentPassword,
+    newPassword,
+  });
 
-  const handleSave = async () => {
-    try {
-      await axiosInstance.put("/auth/update-profile", {
-        fullName,
-        currentPassword,
-        newPassword,
-      });
+  if (updatedUser) {
+    checkAuth();
 
-      toast.success("Profile Updated Successfully");
+    setCurrentPassword("");
+    setNewPassword("");
 
-      checkAuth();
-
-      setCurrentPassword("");
-      setNewPassword("");
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to update profile"
-      );
-    }
-  };
+    toast.success("Profile Updated Successfully");
+  }
+};
 
   if (!authUser) {
     return (

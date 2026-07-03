@@ -107,6 +107,7 @@ export const checkAuth = (req, res) => {
 };
 
 // ================= UPDATE PROFILE =================
+// ================= UPDATE PROFILE =================
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -126,9 +127,9 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    // Update Name
-    if (fullName) {
-      user.fullName = fullName;
+    // Update Full Name
+    if (fullName && fullName.trim() !== "") {
+      user.fullName = fullName.trim();
     }
 
     // Update Profile Picture
@@ -138,7 +139,7 @@ export const updateProfile = async (req, res) => {
       user.profilePic = uploadResponse.secure_url;
     }
 
-    // Change Password
+    // Update Password
     if (currentPassword && newPassword) {
       const isPasswordCorrect = await bcrypt.compare(
         currentPassword,
@@ -151,20 +152,29 @@ export const updateProfile = async (req, res) => {
         });
       }
 
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          message: "Password must be at least 6 characters",
+        });
+      }
+
       user.password = await bcrypt.hash(newPassword, 10);
     }
 
     await user.save();
 
-    res.status(200).json({
+    // Fetch updated user without password
+    const updatedUser = await User.findById(userId).select("-password");
+
+    return res.status(200).json({
       message: "Profile updated successfully",
-      user,
+      user: updatedUser,
     });
 
   } catch (error) {
-    console.log(error);
+    console.log("Update Profile Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal Server Error",
     });
   }
