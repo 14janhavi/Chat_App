@@ -93,15 +93,19 @@ const ChatContainer = () => {
               <div className="chat-bubble flex flex-col gap-2">
 
                 {/* IMAGE */}
-                {message.image && (
-                  <Zoom>
-  <img
-    src={message.image}
-    alt="Shared Image"
-    className="max-w-[250px] rounded-lg"
-  />
-</Zoom>
-                )}
+{message.image && (
+  <Zoom>
+    <img
+      src={message.image}
+      alt="Shared"
+      className="max-w-[250px] rounded-lg cursor-pointer"
+      onClick={() => {
+        console.log(message.image);
+        setSelectedImage(message.image);
+      }}
+    />
+  </Zoom>
+)}
 
 <a
   href={message.image}
