@@ -49,8 +49,7 @@ app.get("/api", (req, res) => {
   res.send("API is working ✅");
 });
 
-// ================= SOCKET INIT =================
-setupSocket();
+
 
 // ================= STATIC (PRODUCTION) =================
 app.get("/api", (req, res) => {
@@ -58,7 +57,18 @@ app.get("/api", (req, res) => {
 });
 
 // ================= START SERVER =================
-server.listen(PORT, () => {
-  console.log(`Server running on PORT: ${PORT}`);
-  connectDB();
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    setupSocket();
+
+    server.listen(PORT, () => {
+      console.log(`✅ Server running on PORT: ${PORT}`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+  }
+};
+
+startServer();

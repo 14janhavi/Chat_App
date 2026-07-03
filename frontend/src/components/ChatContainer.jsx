@@ -107,15 +107,7 @@ const ChatContainer = () => {
   </Zoom>
 )}
 
-<a
-  href={message.image}
-  target="_blank"
-  rel="noopener noreferrer"
-  download
-  className="text-blue-500 text-sm"
->
-  Download
-</a>
+
                 {/* TEXT */}
                 {message.text && <p>{message.text}</p>}
 

@@ -108,16 +108,64 @@ export const checkAuth = (req, res) => {
 
 // ================= UPDATE PROFILE =================
 export const updateProfile = async (req, res) => {
-  const { profilePic } = req.body;
-  const userId = req.user._id;
+  try {
+    const userId = req.user._id;
 
-  const uploadResponse = await cloudinary.uploader.upload(profilePic);
+    const {
+      fullName,
+      profilePic,
+      currentPassword,
+      newPassword,
+    } = req.body;
 
-  const updatedUser = await User.findByIdAndUpdate(
-    userId,
-    { profilePic: uploadResponse.secure_url },
-    { new: true }
-  ).select("-password");
+    const user = await User.findById(userId);
 
-  res.status(200).json({ user: updatedUser });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Update Name
+    if (fullName) {
+      user.fullName = fullName;
+    }
+
+    // Update Profile Picture
+    if (profilePic) {
+      const uploadResponse = await cloudinary.uploader.upload(profilePic);
+
+      user.profilePic = uploadResponse.secure_url;
+    }
+
+    // Change Password
+    if (currentPassword && newPassword) {
+      const isPasswordCorrect = await bcrypt.compare(
+        currentPassword,
+        user.password
+      );
+
+      if (!isPasswordCorrect) {
+        return res.status(400).json({
+          message: "Current password is incorrect",
+        });
+      }
+
+      user.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user,
+    });
+
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 };
