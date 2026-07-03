@@ -16,15 +16,22 @@ export const useAuthStore = create((set, get) => ({
 
   // ================= AUTH CHECK =================
   checkAuth: async () => {
-    try {
-      const res = await axiosInstance.get("/auth/check");
-      set({ authUser: res.data.user });
-    } catch {
-      set({ authUser: null });
-    } finally {
-      set({ isCheckingAuth: false });
-    }
-  },
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await axiosInstance.get("/auth/check", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    set({ authUser: res.data.user });
+  } catch {
+    set({ authUser: null });
+  } finally {
+    set({ isCheckingAuth: false });
+  }
+},
 
   // ================= SIGNUP =================
   signup: async (data) => {
