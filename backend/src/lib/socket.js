@@ -8,35 +8,49 @@ export const app = express();
 export const server = http.createServer(app);
 
 // ================= SOCKET STATE =================
-export let io = null;               // 👈 initialize explicitly
-const userSocketMap = {};           // userId -> socketId
-let isSocketInitialized = false;    // 👈 prevents double init
+export let io = null;
+const userSocketMap = {};
+let isSocketInitialized = false;
 
 // ================= SOCKET INIT =================
 export const setupSocket = () => {
-  // 🛑 Prevent initializing socket more than once
   if (isSocketInitialized) return;
   isSocketInitialized = true;
 
   io = new Server(server, {
     cors: {
-      origin: [
-        "http://localhost:5173",
-        "https://teal-monstera-3c4396.netlify.app",
-      ],
+      origin: (origin, callback) => {
+        const allowedOrigins = [
+          "http://localhost:5173",
+          "https://teal-monstera-3c4396.netlify.app",
+        ];
+
+        if (
+          !origin ||
+          allowedOrigins.includes(origin) ||
+          origin.endsWith(".netlify.app")
+        ) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
+      methods: ["GET", "POST"],
     },
   });
 
-  // ---------- JWT AUTH ----------
+  // ================= JWT AUTH =================
   io.use((socket, next) => {
     try {
       const token = socket.handshake.auth?.token;
+
       if (!token) {
         return next(new Error("Unauthorized: Token missing"));
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
       socket.userId = decoded.userId;
 
       next();
@@ -45,7 +59,7 @@ export const setupSocket = () => {
     }
   });
 
-  // ---------- CONNECTION ----------
+  // ================= CONNECTION =================
   io.on("connection", (socket) => {
     userSocketMap[socket.userId] = socket.id;
 
@@ -60,7 +74,7 @@ export const setupSocket = () => {
   console.log("✅ Socket.IO initialized");
 };
 
-// ================= HELPERS =================
+// ================= HELPER =================
 export const getReceiverSocketId = (receiverId) => {
   return userSocketMap[receiverId] || null;
 };
